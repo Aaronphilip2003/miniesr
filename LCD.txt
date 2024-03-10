@@ -1,0 +1,67 @@
+#include "lpc214x.h"
+
+#define LCD (0xff<<8)
+#define RS  (1<<5)
+#define RW  (1<<6)
+#define EN  (1<<7)
+
+void delay_fv(unsigned int x, int y)
+
+void lcd_display(unsigned int x)
+void cmd(unsigned int x);
+void lcd_ini();
+
+int main()
+{
+	int i;
+	unsigned char a[]={"MITWPU"};
+	PINSEL0=0X00000000;
+	IODIR0=0XFFFFFFFF;
+	lcd_ini();
+	cmd(0x84);
+
+	for(i=0; a[i]!='\0';i++)
+	{
+		lcd_display(a[i]);
+	}
+	return 0;
+}
+
+void delay_fv(unsigned int x,int y)
+{
+	unsigned int i,j;
+	for (i=0;i<x;i++)
+	for (j=0;j<y;j++);
+}
+
+void lcd_display(unsigned int x)
+{
+	IOCLR0 = 0X0000FF00;
+	x = (x<<8);
+	IOSET0 = x;
+	IOSET0 =RS;
+	IOCLR0 =RW;
+	IOSET0 =EN;
+	delay_fv(100,10);
+	IOCLR0 =EN;
+}
+
+void cmd(unsigned int x)
+{
+	IOCLR0 = 0X0000FF00;
+	x = (x<<8);
+	IOSET0 = x;
+	IOSET0 =RS;
+	IOCLR0 =RW;
+	IOSET0 =EN;
+	delay_fv(100,10);
+	IOCLR0 =EN;
+}
+
+void lcd_ini()
+{
+	cmd(0x38);
+	cmd(0x0e);
+	cmd(0x01);
+	cmd(0x06);
+}
