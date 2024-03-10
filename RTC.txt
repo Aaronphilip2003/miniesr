@@ -1,0 +1,139 @@
+#include "lpc214x.h"
+#define LCD (0xff<<8)
+#define RS (1<<5)
+#define RW (1<<6)
+#define EN (1<<7)
+void delay_fv(unsigned int x,int y);
+int ToDecimal(unsigned int value);
+void lcd_display(unsigned int x);
+void cmd(unsigned char m);
+void lcd_pos(int line,int pos);
+void lcd_ini();
+void lcd_str(unsigned char *x);
+void init_rtc();
+unsigned char flag=0;
+int main()
+{
+int j,hour,min,sec;
+PINSEL0=0X00000000;
+PINSEL1=0X00000000;
+IO0DIR=0XFFFFFFFF;
+lcd_ini();
+init_rtc();
+lcd_str("CLOCK:- 24");
+cmd(0xc0);
+while(1)
+{
+unsigned char i=0;
+hour = ToDecimal(HOUR);
+min = ToDecimal(MIN);
+sec = ToDecimal(SEC);
+for(j=0;j<100;j++);
+lcd_pos(2,i++);
+lcd_display(hour/10 + '0');
+lcd_pos(2,i++);
+lcd_display(hour%10 + '0');
+lcd_pos(2,i++);
+lcd_display(':');
+lcd_pos(2,i++);
+lcd_display(min/10 + '0');
+lcd_pos(2,i++);
+lcd_display(min%10 + '0');
+lcd_pos(2,i++);
+lcd_display(':');
+lcd_pos(2,i++);
+lcd_display(sec/10 + '0');
+lcd_pos(2,i++);
+lcd_display(sec%10 + '0');
+}
+}
+int ToDecimal(unsigned int value)
+{
+unsigned int temp;
+ temp=value & 0xf0;
+ temp>>=4;
+ value&=0x0f;
+ temp*=16;
+ if(value<=9)
+ {
+ temp+=value;
+ }
+ else if(value>9)
+ {
+ switch(value)
+{
+case 0x0a: temp+=10;
+ break;
+ case 0x0b: temp+=11;
+ break;
+ case 0x0c: temp+=12;
+ break;
+ case 0x0d: temp+=13;
+ break;
+ case 0x0e: temp+=14;
+ break;
+ case 0x0f: temp+=15;
+ break;
+ }
+ }
+ return(temp);
+}
+void delay_fv(unsigned int x,int y)
+{
+unsigned int i,j;
+for(i=0;i<x;i++)
+for(j=0;j<y;j++);
+}
+void lcd_display(unsigned int x)
+{
+IO0CLR|=(RS|RW|EN|LCD);
+IO0SET|=(x<<8);
+IO0SET|=RS;
+IO0CLR|=RW;
+IO0SET|=EN;
+delay_fv(100,10);
+IO0CLR|=EN;
+delay_fv(10,10);
+}
+void cmd(unsigned char m)
+{
+IO0CLR|=(RS|RW|EN|LCD);
+IO0SET|=(m<<8);
+IO0CLR|=RS;
+IO0CLR|=RW;
+IO0SET|=EN;
+delay_fv(100,250);
+IO0CLR|=EN;
+delay_fv(10,10);
+}
+void lcd_pos(int line,int pos)
+{
+ if(line==1)
+ cmd(0x80+pos);
+ else if(line==2)
+ cmd(0xc0+pos);
+}
+void lcd_ini()
+{
+cmd(0X38);
+cmd(0X0e);
+cmd(0X06);
+cmd(0X01);
+cmd(0X80);
+}
+void lcd_str(unsigned char *x)
+{
+while(*x!='\0')
+{
+ lcd_display(*x);
+ x++;
+}
+}
+void init_rtc()
+{
+CCR = 1<<4; //Select Clock Source
+CCR |= 1<<0; //Enable RTC
+SEC = 0X00;
+HOUR = 12;
+MIN = 11;
+ }
